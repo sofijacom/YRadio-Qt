@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=YRadio-Qt
+Comment=Internet Radio Player
+Exec=python3 /usr/local/YRadio/yradio_qt.py
+Icon=audio-radio
+Terminal=false
+Categories=AudioVideo;Video;Player;
