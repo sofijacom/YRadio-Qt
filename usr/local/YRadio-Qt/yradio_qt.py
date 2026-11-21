@@ -327,7 +327,8 @@ class SearchDialog(QDialog):
                 "SP_MediaPlay",
             )
         )
-        self.resize(1050, 650)
+        # 1050, 650
+        self.resize(850, 600)
 
         self.query_edit = QLineEdit()
         self.query_edit.setPlaceholderText(
