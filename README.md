@@ -7,7 +7,7 @@
 sudo xbps-install -S mpv alsa-utils pulseaudio-utils python3 python3-pyside6
 `
 
-## Using YRadio:
+### Using YRadio:
 
 - Select station: click on it twice or highlight and click Play.
 - Find a station: click Search Stations, select a country and/or enter a station name or tag. Select a result and click Add Selected, to save a station to the current playlist.
