@@ -3,10 +3,12 @@
 <img width="850" height="478" alt="img" src="img.png" />
 
 ### Dependencies:
+
 `
 # Void-linux
 sudo xbps-install -S mpv alsa-utils pulseaudio-utils python3 python3-pyside6
 `
+
 `
 # Arch-linux
 sudo pacman -Syu mpv python pyside6 alsa-utils libpulse pipewire-pulse
