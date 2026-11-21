@@ -1,4 +1,4 @@
-# YRadio-Qt.py
+# YRadio-Qt
 
 <img width="850" height="478" alt="img" src="img.png" />
 
