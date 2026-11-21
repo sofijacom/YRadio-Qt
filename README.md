@@ -11,7 +11,7 @@ sudo xbps-install -S mpv alsa-utils pulseaudio-utils python3 python3-pyside6
 
 ```
 # Arch-linux
-sudo pacman -Syu mpv python pyside6 alsa-utils libpulse pipewire-pulse
+sudo pacman -Syu mpv alsa-utils libpulse pipewire-pulse python pyside6
 ```
 
 ### Using YRadio:
