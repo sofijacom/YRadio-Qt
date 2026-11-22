@@ -1,4 +1,5 @@
 # YRadio-Qt
+#### _Internet radio player with Qt (PySide6) interface_
 
 <img width="850" height="478" alt="img" src="img.png" />
 
