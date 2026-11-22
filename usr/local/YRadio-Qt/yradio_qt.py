@@ -16,7 +16,7 @@ from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
 from PySide6.QtCore import QObject, QProcess, QRunnable, QThreadPool, Qt, Signal
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QActionGroup, QIcon
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -56,8 +56,6 @@ PLAYER_FILE = DATA_DIR / "defplayer"
 RIP_CONF = HOME / ".config" / "streamrip.conf"
 
 RB_HOSTS = ("de1", "de2", "all")
-# Small pages: some networks stall responses after ~16 KB, so each page
-# must stay well below that. Pages are fetched in parallel to compensate.
 RB_LIMIT = 8
 RB_MAX_STATIONS = 10000
 RB_RETRIES = 3
@@ -65,7 +63,7 @@ RB_TIMEOUT = 15
 RB_WORKERS = 10
 
 def app_icon(icon_file, theme_name, standard_name):
-    """Сначала ищет PNG в ./icons, затем системную иконку и значок Qt."""
+    """Ищет значок в ./icons, затем системный значок и значок Qt."""
     icon_path = ICON_DIR / icon_file
     if icon_path.is_file():
         return QIcon(str(icon_path))
@@ -269,8 +267,6 @@ class SearchWorker(QRunnable):
                 if country_name:
                     stations = self._get_country_stations(host, self.country)
 
-                    # Apply the optional query to the selected country's
-                    # stations, rather than searching all countries.
                     if self.query:
                         query = self.query.casefold()
                         stations = [
@@ -302,7 +298,6 @@ class SearchWorker(QRunnable):
                     if key:
                         results[key] = station
 
-                # Stop at the first server that returned something.
                 if results:
                     break
 
@@ -321,13 +316,8 @@ class SearchDialog(QDialog):
         self.parent_window = parent
         self.setWindowTitle("Search Radio Stations")
         self.setWindowIcon(
-            app_icon(
-                "internetradio.png",
-                "audio-radio",
-                "SP_MediaPlay",
-            )
+            app_icon("internetradio.png", "audio-radio", "SP_MediaPlay")
         )
-        # 1050, 650
         self.resize(850, 600)
 
         self.query_edit = QLineEdit()
@@ -352,25 +342,13 @@ class SearchDialog(QDialog):
             )
         )
         self.add_button.setIcon(
-            app_icon(
-                "gtk-new1.png",
-                "list-add",
-                "SP_FileDialogNewFolder",
-            )
+            app_icon("gtk-new1.png", "list-add", "SP_FileDialogNewFolder")
         )
         self.save_all_button.setIcon(
-            app_icon(
-                "save.png",
-                "document-save",
-                "SP_DialogSaveButton",
-            )
+            app_icon("save.png", "document-save", "SP_DialogSaveButton")
         )
         self.close_button.setIcon(
-            app_icon(
-                "quit.png",
-                "window-close",
-                "SP_DialogCloseButton",
-            )
+            app_icon("quit.png", "window-close", "SP_DialogCloseButton")
         )
 
         self.table = QTableWidget(0, 3)
@@ -551,6 +529,7 @@ class YRadioWindow(QMainWindow):
         self.current_playlist = "Favorites"
         self.current_url = ""
         self.current_station = ""
+        self.current_genre = ""
         self.paused = False
         self.volume_dialog = None
         self.workers = {}
@@ -773,19 +752,46 @@ class YRadioWindow(QMainWindow):
     def _build_tray(self):
         self.tray = QSystemTrayIcon(self)
         self.tray.setIcon(
-            app_icon(
-                "internetradio.png",
-                "audio-radio",
-                "SP_MediaPlay",
-            )
+            app_icon("internetradio.png", "audio-radio", "SP_MediaPlay")
         )
         self.tray.setToolTip("YRadio")
 
         menu = QMenu(self)
+
+        player_menu = menu.addMenu(
+            app_icon("player.png", "multimedia-player", "SP_MediaPlay"),
+            "Select player",
+        )
+        self.player_action_group = QActionGroup(self)
+        self.player_action_group.setExclusive(True)
+        self.player_actions = {}
+
+        for player in ("mpv", "mplayer"):
+            action = player_menu.addAction(player)
+            action.setCheckable(True)
+            action.setEnabled(shutil.which(player) is not None)
+            action.setChecked(self.player_name == player)
+            self.player_action_group.addAction(action)
+            self.player_actions[player] = action
+            action.triggered.connect(
+                lambda _checked=False, name=player: self.select_player(name)
+            )
+
+        menu.addSeparator()
+
         menu.addAction(
             app_icon("internetradio.png", "go-home", "SP_DesktopIcon"),
             "Show YRadio",
             self.show_and_raise,
+        )
+        menu.addAction(
+            app_icon(
+                "help.png",
+                "dialog-information",
+                "SP_MessageBoxInformation",
+            ),
+            "Stream info",
+            self.show_stream_info,
         )
         menu.addAction(
             app_icon("stop.png", "media-playback-stop", "SP_MediaStop"),
@@ -802,11 +808,7 @@ class YRadioWindow(QMainWindow):
             self.toggle_pause,
         )
         menu.addAction(
-            app_icon(
-                "volume.png",
-                "audio-volume-high",
-                "SP_MediaVolume",
-            ),
+            app_icon("volume.png", "audio-volume-high", "SP_MediaVolume"),
             "Volume",
             self.show_volume,
         )
@@ -814,6 +816,15 @@ class YRadioWindow(QMainWindow):
             app_icon("record.png", "media-record", "SP_DialogSaveButton"),
             "Start / Stop Recording",
             self.toggle_ripping,
+        )
+        menu.addAction(
+            app_icon(
+                "gtk-help.png",
+                "help-contents",
+                "SP_DialogHelpButton",
+            ),
+            "Help",
+            self.show_help,
         )
         menu.addSeparator()
         menu.addAction(
@@ -827,6 +838,118 @@ class YRadioWindow(QMainWindow):
 
         if QSystemTrayIcon.isSystemTrayAvailable():
             self.tray.show()
+
+    def show_stream_info(self):
+        url = self.current_url
+        name = self.current_station
+        genre = self.current_genre
+
+        if not url:
+            station = self.selected_playlist_station()
+            if station:
+                url, name, genre = station
+
+        if not url and NOW_URL.exists():
+            try:
+                url = NOW_URL.read_text(encoding="utf-8").strip()
+            except OSError:
+                url = ""
+
+        if not name and NOW_PLAY.exists():
+            try:
+                name = NOW_PLAY.read_text(encoding="utf-8").strip()
+            except OSError:
+                name = ""
+
+        url_lines = [
+            url[i:i + 60] for i in range(0, len(url), 60)
+        ] or ["—"]
+
+        text = (
+            "URL:\n" + "\n".join(url_lines) +
+            f"\n\nname: {name or '—'}"
+            f"\ngenre: {genre or '—'}"
+        )
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Stream info")
+        dialog.setFixedWidth(560)
+
+        label = QLabel(text)
+        label.setWordWrap(True)
+        label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Close
+        )
+        buttons.rejected.connect(dialog.reject)
+
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(label)
+        layout.addWidget(buttons)
+
+        dialog.exec()
+
+    def show_help(self):
+        text = (
+            "<h3>How to use YRadio</h3>"
+            "<p><b>Version: YRadio-Qt 1.0.3</b></p>"
+            "<ul>"
+            "<hr>"
+            "<li><b>Play a station:</b> double-click it in the list, "
+            "or select it and click <b>Play</b>.</li>"
+            "<li><b>Find a station:</b> click <b>Search Stations</b>, "
+            "choose a country and/or enter a station name or tag. "
+            "Select a result and click <b>Add Selected</b> to add it "
+            "to the current playlist.</li>"
+            "<li><b>Manage playlists:</b> choose a playlist at the top "
+            "of the window. Use the buttons to add or remove stations, "
+            "create a playlist, or copy a station to another playlist.</li>"
+            "<li><b>Select a player:</b> right-click the YRadio tray icon, "
+            "open <b>Select player (mpv or mplayer)</b>, and choose an "
+            "installed player. The selection takes effect the next time "
+            "you start a station.</li>"
+            "<li><b>Pause, volume, and stop:</b> use the buttons in the "
+            "window or the corresponding items in the tray menu.</li>"
+            "<li><b>Record:</b> start a station and click "
+            "<b>Start Recording</b>. Recording requires <b>mpv</b> and "
+            "<b>yradio_ripper.lua</b> in the program folder. The first "
+            "time you record, choose a folder for the recordings.</li>"
+            "</ul>"
+            "<hr>"
+            #"<p align='center'><b>Version YRadio-Qt 1.0.3</b></p>"
+        )
+
+        QMessageBox.information(
+            self,
+            "YRadio Help",
+            text,
+        )
+
+    def select_player(self, name):
+        if not shutil.which(name):
+            return
+
+        try:
+            PLAYER_FILE.parent.mkdir(parents=True, exist_ok=True)
+            PLAYER_FILE.write_text(name + "\n", encoding="utf-8")
+        except OSError as exc:
+            if self.player_name in self.player_actions:
+                self.player_actions[self.player_name].setChecked(True)
+            QMessageBox.warning(
+                self,
+                "Player Selection",
+                f"Could not save the player setting:\n{exc}",
+            )
+            return
+
+        self.player_name = name
+        self.status.setText(
+            f"Selected player: {name}. It will be used the next time "
+            "you start a station."
+        )
 
     def tray_activated(self, reason):
         if reason in (
@@ -935,9 +1058,9 @@ class YRadioWindow(QMainWindow):
             )
             return
 
-        self.play_station(station[0], station[1])
+        self.play_station(station[0], station[1], station[2])
 
-    def play_station(self, url, name):
+    def play_station(self, url, name, genre=""):
         if not self.player_name:
             QMessageBox.critical(
                 self,
@@ -949,6 +1072,7 @@ class YRadioWindow(QMainWindow):
         self.stop_playback()
         self.current_url = url
         self.current_station = name
+        self.current_genre = genre
         self.paused = False
 
         NOW_URL.write_text(url + "\n", encoding="utf-8")
@@ -987,9 +1111,7 @@ class YRadioWindow(QMainWindow):
             pid = int(self.player.processId())
             os.kill(pid, signal.SIGCONT if self.paused else signal.SIGSTOP)
             self.paused = not self.paused
-            self.pause_button.setText(
-                "Resume" if self.paused else "Pause"
-            )
+            self.pause_button.setText("Resume" if self.paused else "Pause")
         except (OSError, ProcessLookupError, ValueError):
             pass
 
@@ -1512,7 +1634,7 @@ def main():
     if not shutil.which("mpv") and not shutil.which("mplayer"):
         QMessageBox.critical(
             None,
-            "YRadio",
+            "Player Not Found",
             "mpv or mplayer was not found. Install one of these players.",
         )
         return 1
