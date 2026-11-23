@@ -9,6 +9,11 @@
 ### Dependencies:
 
 ```
+# Debian/Ubuntu
+sudo apt install mpv alsa-utils pulseaudio-utils python3 python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets
+```
+
+```
 # Void-linux
 sudo xbps-install -S mpv alsa-utils pulseaudio-utils python3 python3-pyside6 python3-pyside6-gui python3-pyside6-widgets
 ```
