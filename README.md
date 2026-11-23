@@ -10,7 +10,8 @@
 
 ```
 # Debian/Ubuntu
-sudo apt install mpv alsa-utils pulseaudio-utils python3 python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets
+sudo apt install mpv alsa-utils pulseaudio-utils python3 \
+  python3-pyside6.qtcore python3-pyside6.qtgui python3-pyside6.qtwidgets
 ```
 
 ```
