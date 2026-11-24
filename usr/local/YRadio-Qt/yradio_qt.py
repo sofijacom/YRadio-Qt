@@ -79,6 +79,19 @@ def app_icon(icon_file, theme_name, standard_name):
     )
     return QApplication.style().standardIcon(standard)
 
+def app_logo():
+    """Значок программы: тема audio-radio, затем ./icons, затем запасной."""
+    icon = QIcon.fromTheme("audio-radio")
+    if not icon.isNull():
+        return icon
+
+    for name in ("audio-radio.svg", "audio-radio.png"):
+        icon_path = ICON_DIR / name
+        if icon_path.is_file():
+            return QIcon(str(icon_path))
+
+    return app_icon("internet_radio_48.png", "audio-radio", "SP_MediaPlay")
+
 def run_command(args, timeout=3):
     try:
         result = subprocess.run(
@@ -895,7 +908,7 @@ class YRadioWindow(QMainWindow):
     def show_help(self):
         text = (
             "<h3>How to use YRadio</h3>"
-            "<p><b>Version: YRadio-Qt 1.0.6</b></p>"
+            "<p><b>Version: 1.0.7</b></p>"
             "<ul>"
             "<hr>"
             "<li><b>Play a station:</b> double-click it in the list, "
@@ -922,11 +935,15 @@ class YRadioWindow(QMainWindow):
             #"<p align='center'><b>Version YRadio-Qt 1.0.3</b></p>"
         )
 
-        QMessageBox.information(
-            self,
-            "YRadio Help",
-            text,
-        )
+        logo = app_logo()
+        box = QMessageBox(self)
+        box.setWindowTitle("YRadio Help")
+        box.setWindowIcon(logo)
+        box.setIconPixmap(logo.pixmap(64, 64))
+        box.setTextFormat(Qt.TextFormat.RichText)
+        box.setText(text)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        box.exec()
 
     def select_player(self, name):
         if not shutil.which(name):
@@ -1630,6 +1647,8 @@ class YRadioWindow(QMainWindow):
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("YRadio")
+    app.setDesktopFileName("audio-radio")
+    app.setWindowIcon(app_logo())
 
     if not shutil.which("mpv") and not shutil.which("mplayer"):
         QMessageBox.critical(
