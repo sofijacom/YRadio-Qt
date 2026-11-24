@@ -1625,6 +1625,11 @@ class YRadioWindow(QMainWindow):
                 "--ao=null",
                 f"--script={lua_script}",
                 "--vo=null",
+                "--no-config",
+                "--quiet",
+                "--cache=yes",
+                "--demuxer-readahead-secs=0",
+                "--demuxer-max-bytes=64KiB",
                 url,
             ],
         )
