@@ -895,7 +895,7 @@ class YRadioWindow(QMainWindow):
     def show_help(self):
         text = (
             "<h3>How to use YRadio</h3>"
-            "<p><b>Version: YRadio-Qt 1.0.4</b></p>"
+            "<p><b>Version: YRadio-Qt 1.0.6</b></p>"
             "<ul>"
             "<hr>"
             "<li><b>Play a station:</b> double-click it in the list, "
