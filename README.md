@@ -16,7 +16,7 @@ sudo apt install mpv alsa-utils pulseaudio-utils python3 \
 
 ```
 # Void-linux
-sudo xbps-install -S mpv alsa-utils pulseaudio-utils python3 \
+sudo xbps-install -Su mpv alsa-utils pulseaudio-utils python3 \
   python3-pyside6 python3-pyside6-gui python3-pyside6-widgets
 ```
 
