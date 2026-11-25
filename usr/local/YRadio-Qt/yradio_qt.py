@@ -933,6 +933,8 @@ class YRadioWindow(QMainWindow):
             "time you record, choose a folder for the recordings.</li>"
             "</ul>"
             "<hr>"
+            "<li>© 2026 Copyright • <b>Sofiya</b></li>"
+            "<li><b>License: MIT</b></li>"
             #"<p align='center'><b>Version YRadio-Qt 1.0.3</b></p>"
         )
 
