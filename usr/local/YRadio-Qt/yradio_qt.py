@@ -907,11 +907,11 @@ class YRadioWindow(QMainWindow):
 
     def show_help(self):
         text = (
-            "<h3>YRadio-Qt</h3>"
-            "<li>Internet radio player with Qt (PySide6) interface.</li>"
-            "<b>Version: 1.0.7</b>"
-            "<ul>"
+            "<h3 style='margin: 0;'>YRadio-Qt</h3>"
+            "<p style='margin: 0;'>Internet radio player with Qt (PySide6) interface.</p>"
+            "<p style='margin: 0;'><b>Version: 1.0.7</b></p>"
             "<hr>"
+            "<ul>"
             "<li><b>Play a station:</b> double-click it in the list, "
             "or select it and click <b>Play</b>.</li>"
             "<li><b>Find a station:</b> click <b>Search Stations</b>, "
@@ -933,9 +933,11 @@ class YRadioWindow(QMainWindow):
             "time you record, choose a folder for the recordings.</li>"
             "</ul>"
             "<hr>"
-            "<li>© 2026 Copyright • <b>Sofiya</b></li>"
-            "<li><b>License: MIT</b></li>"
-            #"<p align='center'><b>Version YRadio-Qt 1.0.3</b></p>"
+            "<p>© 2026 Copyright • <b>Sofiya</b><br>"
+            "<b>License: MIT</b><br>"
+            "Program website: "
+            '<a href="https://github.com/sofijacom/YRadio-Qt">'
+            "https://github.com/sofijacom/YRadio-Qt</a></p>"
         )
 
         logo = app_logo()
