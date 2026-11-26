@@ -15,7 +15,18 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
 
-from PySide6.QtCore import QObject, QProcess, QRunnable, QThreadPool, Qt, Signal
+from PySide6.QtCore import (
+    QCoreApplication,
+    QLibraryInfo,
+    QLocale,
+    QObject,
+    QProcess,
+    QRunnable,
+    QThreadPool,
+    Qt,
+    QTranslator,
+    Signal,
+)
 from PySide6.QtGui import QActionGroup, QIcon
 from PySide6.QtWidgets import (
     QApplication,
@@ -327,7 +338,7 @@ class SearchDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent_window = parent
-        self.setWindowTitle("Search Radio Stations")
+        self.setWindowTitle(self.tr("Search Radio Stations"))
         self.setWindowIcon(
             app_icon("internetradio.png", "audio-radio", "SP_MediaPlay")
         )
@@ -335,17 +346,17 @@ class SearchDialog(QDialog):
 
         self.query_edit = QLineEdit()
         self.query_edit.setPlaceholderText(
-            "Station name or tag; leave empty to list stations in a country"
+            self.tr("Station name or tag; leave empty to list stations in a country")
         )
 
         self.country_combo = QComboBox()
-        self.country_combo.addItem("All Countries", None)
+        self.country_combo.addItem(self.tr("All Countries"), None)
         self.country_combo.setMinimumWidth(420)
 
-        self.search_button = QPushButton("Search")
-        self.add_button = QPushButton("Add Selected")
-        self.save_all_button = QPushButton("Save All to New Playlist")
-        self.close_button = QPushButton("Close")
+        self.search_button = QPushButton(self.tr("Search"))
+        self.add_button = QPushButton(self.tr("Add Selected"))
+        self.save_all_button = QPushButton(self.tr("Save All to New Playlist"))
+        self.close_button = QPushButton(self.tr("Close"))
 
         self.search_button.setIcon(
             app_icon(
@@ -365,7 +376,7 @@ class SearchDialog(QDialog):
         )
 
         self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Station", "Country", "Tags"])
+        self.table.setHorizontalHeaderLabels([self.tr("Station"), self.tr("Country"), self.tr("Tags")])
         self.table.setSelectionBehavior(
             QTableWidget.SelectionBehavior.SelectRows
         )
@@ -386,12 +397,12 @@ class SearchDialog(QDialog):
             2, QHeaderView.ResizeMode.Stretch
         )
 
-        self.message = QLabel("Loading country list...")
+        self.message = QLabel(self.tr("Loading country list..."))
         self.message.setWordWrap(True)
 
         form = QFormLayout()
-        form.addRow("Station or tag:", self.query_edit)
-        form.addRow("Country:", self.country_combo)
+        form.addRow(self.tr("Station or tag:"), self.query_edit)
+        form.addRow(self.tr("Country:"), self.country_combo)
 
         buttons = QHBoxLayout()
         buttons.addWidget(self.search_button)
@@ -418,7 +429,7 @@ class SearchDialog(QDialog):
 
     def set_countries(self, countries):
         self.country_combo.clear()
-        self.country_combo.addItem("All Countries", None)
+        self.country_combo.addItem(self.tr("All Countries"), None)
 
         for entry in countries:
             name = str(entry.get("name") or "").strip()
@@ -431,7 +442,7 @@ class SearchDialog(QDialog):
                 count = 0
 
             self.country_combo.addItem(
-                f"{name} ({count:,} stations)",
+                self.tr("{0} ({1} stations)").format(name, f"{count:,}"),
                 {
                     "name": name,
                     "code": str(entry.get("iso_3166_1") or "").upper(),
@@ -439,7 +450,7 @@ class SearchDialog(QDialog):
             )
 
         self.message.setText(
-            "Choose a country or enter a station name or tag."
+            self.tr("Choose a country or enter a station name or tag.")
         )
 
     def start_search(self):
@@ -449,15 +460,15 @@ class SearchDialog(QDialog):
         if not query and not country:
             QMessageBox.information(
                 self,
-                "Search",
-                "Enter a station name or tag, or choose a country.",
+                self.tr("Search"),
+                self.tr("Enter a station name or tag, or choose a country."),
             )
             return
 
         self.search_button.setEnabled(False)
         self.save_all_button.setEnabled(False)
-        self.search_button.setText("Searching...")
-        self.message.setText("Searching Radio Browser...")
+        self.search_button.setText(self.tr("Searching..."))
+        self.message.setText(self.tr("Searching Radio Browser..."))
         self.table.setRowCount(0)
 
         worker = SearchWorker(query, country)
@@ -474,7 +485,7 @@ class SearchDialog(QDialog):
             row = self.table.rowCount()
             self.table.insertRow(row)
 
-            name = str(station.get("name") or "(unnamed station)")
+            name = str(station.get("name") or self.tr("(unnamed station)"))
             country = str(station.get("country") or "")
             tags = str(station.get("tags") or "")
 
@@ -484,7 +495,9 @@ class SearchDialog(QDialog):
             self.table.setItem(row, 1, QTableWidgetItem(country))
             self.table.setItem(row, 2, QTableWidgetItem(tags))
 
-        self.message.setText(f"Stations found: {len(stations)}.")
+        self.message.setText(
+            self.tr("Stations found: {0}.").format(len(stations))
+        )
 
     def selected_station(self):
         row = self.table.currentRow()
@@ -611,7 +624,7 @@ class YRadioWindow(QMainWindow):
 
         self.table = QTableWidget(0, 3)
         self.table.setHorizontalHeaderLabels(
-            ["Station", "Description", "URL"]
+            [self.tr("Station"), self.tr("Description"), self.tr("URL")]
         )
         self.table.setColumnHidden(2, True)
         self.table.setSelectionBehavior(
@@ -634,21 +647,21 @@ class YRadioWindow(QMainWindow):
             lambda *_: self.play_selected()
         )
 
-        self.status = QLabel("Ready")
+        self.status = QLabel(self.tr("Ready"))
         self.status.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
 
-        self.search_button = QPushButton("Search Stations")
-        self.play_button = QPushButton("Play")
-        self.stop_button = QPushButton("Stop")
-        self.pause_button = QPushButton("Pause")
-        self.volume_button = QPushButton("Volume")
-        self.add_button = QPushButton("Add Station")
-        self.remove_button = QPushButton("Remove")
-        self.new_playlist_button = QPushButton("New Playlist")
-        self.move_button = QPushButton("Copy to Playlist")
-        self.rip_button = QPushButton("Start Recording")
+        self.search_button = QPushButton(self.tr("Search Stations"))
+        self.play_button = QPushButton(self.tr("Play"))
+        self.stop_button = QPushButton(self.tr("Stop"))
+        self.pause_button = QPushButton(self.tr("Pause"))
+        self.volume_button = QPushButton(self.tr("Volume"))
+        self.add_button = QPushButton(self.tr("Add Station"))
+        self.remove_button = QPushButton(self.tr("Remove"))
+        self.new_playlist_button = QPushButton(self.tr("New Playlist"))
+        self.move_button = QPushButton(self.tr("Copy to Playlist"))
+        self.rip_button = QPushButton(self.tr("Start Recording"))
 
         button_icons = [
             (
@@ -719,7 +732,7 @@ class YRadioWindow(QMainWindow):
             )
 
         top = QHBoxLayout()
-        top.addWidget(QLabel("Playlist:"))
+        top.addWidget(QLabel(self.tr("Playlist:")))
         top.addWidget(self.playlist_combo, 1)
         top.addWidget(self.search_button)
 
@@ -773,7 +786,7 @@ class YRadioWindow(QMainWindow):
 
         player_menu = menu.addMenu(
             app_icon("player.png", "multimedia-player", "SP_MediaPlay"),
-            "Select player",
+            self.tr("Select player"),
         )
         self.player_action_group = QActionGroup(self)
         self.player_action_group.setExclusive(True)
@@ -794,7 +807,7 @@ class YRadioWindow(QMainWindow):
 
         menu.addAction(
             app_icon("internetradio.png", "go-home", "SP_DesktopIcon"),
-            "Show YRadio",
+            self.tr("Show YRadio"),
             self.show_and_raise,
         )
         menu.addAction(
@@ -803,12 +816,12 @@ class YRadioWindow(QMainWindow):
                 "dialog-information",
                 "SP_MessageBoxInformation",
             ),
-            "Stream info",
+            self.tr("Stream info"),
             self.show_stream_info,
         )
         menu.addAction(
             app_icon("stop.png", "media-playback-stop", "SP_MediaStop"),
-            "Stop",
+            self.tr("Stop"),
             self.stop_playback,
         )
         menu.addAction(
@@ -817,17 +830,17 @@ class YRadioWindow(QMainWindow):
                 "media-playback-pause",
                 "SP_MediaPause",
             ),
-            "Pause / Resume",
+            self.tr("Pause / Resume"),
             self.toggle_pause,
         )
         menu.addAction(
             app_icon("volume.png", "audio-volume-high", "SP_MediaVolume"),
-            "Volume",
+            self.tr("Volume"),
             self.show_volume,
         )
         menu.addAction(
             app_icon("record.png", "media-record", "SP_DialogSaveButton"),
-            "Start / Stop Recording",
+            self.tr("Start / Stop Recording"),
             self.toggle_ripping,
         )
         menu.addAction(
@@ -836,13 +849,13 @@ class YRadioWindow(QMainWindow):
                 "help-contents",
                 "SP_DialogHelpButton",
             ),
-            "Help",
+            self.tr("Help"),
             self.show_help,
         )
         menu.addSeparator()
         menu.addAction(
             app_icon("quit.png", "application-exit", "SP_DialogCloseButton"),
-            "Exit",
+            self.tr("Exit"),
             self.close,
         )
 
@@ -879,13 +892,13 @@ class YRadioWindow(QMainWindow):
         ] or ["—"]
 
         text = (
-            "URL:\n" + "\n".join(url_lines) +
-            f"\n\nname: {name or '—'}"
-            f"\ngenre: {genre or '—'}"
+            "URL:\n" + "\n".join(url_lines) + "\n\n"
+            + self.tr("name: {0}").format(name or "—") + "\n"
+            + self.tr("genre: {0}").format(genre or "—")
         )
 
         dialog = QDialog(self)
-        dialog.setWindowTitle("Stream info")
+        dialog.setWindowTitle(self.tr("Stream info"))
         dialog.setFixedWidth(560)
 
         label = QLabel(text)
@@ -906,10 +919,10 @@ class YRadioWindow(QMainWindow):
         dialog.exec()
 
     def show_help(self):
-        text = (
+        text = self.tr(
             "<h3 style='margin: 0;'>YRadio-Qt</h3>"
             "<p style='margin: 0;'>Internet radio player with Qt (PySide6) interface.</p>"
-            "<p style='margin: 0;'><b>Version: 1.0.7</b></p>"
+            "<p style='margin: 0;'><b>Version: 1.0.8</b></p>"
             "<hr>"
             "<ul>"
             "<li><b>Play a station:</b> double-click it in the list, "
@@ -942,7 +955,7 @@ class YRadioWindow(QMainWindow):
 
         logo = app_logo()
         box = QMessageBox(self)
-        box.setWindowTitle("YRadio Help")
+        box.setWindowTitle(self.tr("YRadio Help"))
         box.setWindowIcon(logo)
         box.setIconPixmap(logo.pixmap(64, 64))
         box.setTextFormat(Qt.TextFormat.RichText)
@@ -962,15 +975,17 @@ class YRadioWindow(QMainWindow):
                 self.player_actions[self.player_name].setChecked(True)
             QMessageBox.warning(
                 self,
-                "Player Selection",
-                f"Could not save the player setting:\n{exc}",
+                self.tr("Player Selection"),
+                self.tr("Could not save the player setting:\n{0}").format(exc),
             )
             return
 
         self.player_name = name
         self.status.setText(
-            f"Selected player: {name}. It will be used the next time "
-            "you start a station."
+            self.tr(
+                "Selected player: {0}. It will be used the next time "
+                "you start a station."
+            ).format(name)
         )
 
     def tray_activated(self, reason):
@@ -1059,7 +1074,10 @@ class YRadioWindow(QMainWindow):
             self.table.setItem(row, 2, QTableWidgetItem(url))
 
         self.status.setText(
-            f"{self.current_playlist}: {self.table.rowCount()} stations"
+            self.tr("{0}: {1} stations").format(
+                self.current_playlist,
+                self.table.rowCount(),
+            )
         )
 
     def selected_playlist_station(self):
@@ -1076,7 +1094,7 @@ class YRadioWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "YRadio",
-                "Select a station first.",
+                self.tr("Select a station first."),
             )
             return
 
@@ -1086,8 +1104,8 @@ class YRadioWindow(QMainWindow):
         if not self.player_name:
             QMessageBox.critical(
                 self,
-                "Player Not Found",
-                "Install mpv or mplayer.",
+                self.tr("Player Not Found"),
+                self.tr("Install mpv or mplayer."),
             )
             return
 
@@ -1113,7 +1131,7 @@ class YRadioWindow(QMainWindow):
             args = ["-quiet", "-cache", "320", "-cache-min", "8", url]
 
         self.player.start(program, args)
-        self.status.setText(f"Starting: {name}")
+        self.status.setText(self.tr("Starting: {0}").format(name))
 
     def stop_playback(self):
         if self.player.state() != QProcess.ProcessState.NotRunning:
@@ -1123,7 +1141,7 @@ class YRadioWindow(QMainWindow):
                 self.player.waitForFinished(1000)
 
         self.paused = False
-        self.pause_button.setText("Pause")
+        self.pause_button.setText(self.tr("Pause"))
 
     def toggle_pause(self):
         if self.player.state() != QProcess.ProcessState.Running:
@@ -1133,7 +1151,7 @@ class YRadioWindow(QMainWindow):
             pid = int(self.player.processId())
             os.kill(pid, signal.SIGCONT if self.paused else signal.SIGSTOP)
             self.paused = not self.paused
-            self.pause_button.setText("Resume" if self.paused else "Pause")
+            self.pause_button.setText(self.tr("Resume") if self.paused else self.tr("Pause"))
         except (OSError, ProcessLookupError, ValueError):
             pass
 
@@ -1147,12 +1165,12 @@ class YRadioWindow(QMainWindow):
             match = re.search(r"icy-title[:=]\s*(.*)", line, re.IGNORECASE)
             if match and match.group(1).strip():
                 title = f"{self.current_station} — {match.group(1).strip()}"
-                self.status.setText(f"Playing: {title}")
+                self.status.setText(self.tr("Playing: {0}").format(title))
                 self.tray.setToolTip(title[:120])
 
     def player_finished(self, _code, _status):
         self.paused = False
-        self.pause_button.setText("Pause")
+        self.pause_button.setText(self.tr("Pause"))
 
     def open_search(self):
         self.search_dialog = SearchDialog(self)
@@ -1174,8 +1192,9 @@ class YRadioWindow(QMainWindow):
             dialog.set_countries(countries)
         else:
             dialog.message.setText(
-                "Could not load countries. "
-                f"Error: {error or 'empty server response'}"
+                self.tr("Could not load countries. Error: {0}").format(
+                    error or self.tr("empty server response")
+                )
             )
 
     def search_finished(self, worker, stations, error):
@@ -1185,18 +1204,19 @@ class YRadioWindow(QMainWindow):
 
         dialog.search_button.setEnabled(True)
         dialog.save_all_button.setEnabled(True)
-        dialog.search_button.setText("Search")
+        dialog.search_button.setText(self.tr("Search"))
         dialog.set_results(stations)
 
         if error and stations:
             dialog.message.setText(
-                f"Found {len(stations)} stations. "
-                f"Some server requests failed: {error}"
+                self.tr(
+                    "Found {0} stations. Some server requests failed: {1}"
+                ).format(len(stations), error)
             )
         elif error:
-            dialog.message.setText(f"Search failed: {error}")
+            dialog.message.setText(self.tr("Search failed: {0}").format(error))
         elif not stations:
-            dialog.message.setText("No stations found.")
+            dialog.message.setText(self.tr("No stations found."))
 
     @staticmethod
     def station_line(station):
@@ -1221,8 +1241,8 @@ class YRadioWindow(QMainWindow):
         if not station:
             QMessageBox.information(
                 dialog,
-                "Search",
-                "Select a station first.",
+                self.tr("Search"),
+                self.tr("Select a station first."),
             )
             return
 
@@ -1230,8 +1250,8 @@ class YRadioWindow(QMainWindow):
         if not line:
             QMessageBox.warning(
                 dialog,
-                "Search",
-                "This station has no stream URL.",
+                self.tr("Search"),
+                self.tr("This station has no stream URL."),
             )
             return
 
@@ -1241,14 +1261,16 @@ class YRadioWindow(QMainWindow):
         except OSError as exc:
             QMessageBox.critical(
                 dialog,
-                "Error",
-                f"Could not save station:\n{exc}",
+                self.tr("Error"),
+                self.tr("Could not save station:\n{0}").format(exc),
             )
             return
 
         self.load_playlist()
         dialog.message.setText(
-            f"Station added to playlist '{self.current_playlist}'."
+            self.tr("Station added to playlist '{0}'.").format(
+                self.current_playlist
+            )
         )
 
     def save_search_results(self, dialog):
@@ -1264,15 +1286,15 @@ class YRadioWindow(QMainWindow):
         if not stations:
             QMessageBox.information(
                 dialog,
-                "Playlist",
-                "There are no search results to save.",
+                self.tr("Playlist"),
+                self.tr("There are no search results to save."),
             )
             return
 
         name, accepted = QInputDialog.getText(
             dialog,
-            "Save All Stations",
-            f"New playlist name ({len(stations)} stations):",
+            self.tr("Save All Stations"),
+            self.tr("New playlist name ({0} stations):").format(len(stations)),
         )
         if not accepted:
             return
@@ -1286,8 +1308,8 @@ class YRadioWindow(QMainWindow):
         if path.exists():
             QMessageBox.warning(
                 dialog,
-                "Playlist",
-                "A playlist with that name already exists.",
+                self.tr("Playlist"),
+                self.tr("A playlist with that name already exists."),
             )
             return
 
@@ -1310,8 +1332,8 @@ class YRadioWindow(QMainWindow):
         except OSError as exc:
             QMessageBox.critical(
                 dialog,
-                "Error",
-                f"Could not create playlist:\n{exc}",
+                self.tr("Error"),
+                self.tr("Could not create playlist:\n{0}").format(exc),
             )
             return
 
@@ -1319,22 +1341,24 @@ class YRadioWindow(QMainWindow):
         self.load_playlist()
         QMessageBox.information(
             dialog,
-            "Done",
-            f"Created playlist '{name}' with {len(lines)} stations.",
+            self.tr("Done"),
+            self.tr("Created playlist '{0}' with {1} stations.").format(
+                name, len(lines)
+            ),
         )
 
     def add_custom_station(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Add Station")
+        dialog.setWindowTitle(self.tr("Add Station"))
 
         name_edit = QLineEdit()
         url_edit = QLineEdit()
         description_edit = QLineEdit()
 
         form = QFormLayout(dialog)
-        form.addRow("Name:", name_edit)
-        form.addRow("Stream URL:", url_edit)
-        form.addRow("Description / tags:", description_edit)
+        form.addRow(self.tr("Name:"), name_edit)
+        form.addRow(self.tr("Stream URL:"), url_edit)
+        form.addRow(self.tr("Description / tags:"), description_edit)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
@@ -1355,7 +1379,7 @@ class YRadioWindow(QMainWindow):
             QMessageBox.warning(
                 self,
                 "YRadio",
-                "Enter both a name and a URL.",
+                self.tr("Enter both a name and a URL."),
             )
             return
 
@@ -1378,7 +1402,7 @@ class YRadioWindow(QMainWindow):
             with path.open("a", encoding="utf-8") as file:
                 file.write(f"{url}|{name}|{description}\n")
         except OSError as exc:
-            QMessageBox.warning(None, "Error", str(exc))
+            QMessageBox.warning(None, QCoreApplication.translate("YRadioWindow", "Error"), str(exc))
 
     def remove_selected(self):
         station = self.selected_playlist_station()
@@ -1386,14 +1410,14 @@ class YRadioWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "YRadio",
-                "Select a station first.",
+                self.tr("Select a station first."),
             )
             return
 
         answer = QMessageBox.question(
             self,
-            "Remove Station",
-            f"Remove '{station[1]}' from the current playlist?",
+            self.tr("Remove Station"),
+            self.tr("Remove '{0}' from the current playlist?").format(station[1]),
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
@@ -1423,7 +1447,7 @@ class YRadioWindow(QMainWindow):
                 encoding="utf-8",
             )
         except OSError as exc:
-            QMessageBox.warning(self, "Error", str(exc))
+            QMessageBox.warning(self, self.tr("Error"), str(exc))
             return
 
         self.load_playlist()
@@ -1431,8 +1455,8 @@ class YRadioWindow(QMainWindow):
     def create_playlist(self):
         name, accepted = QInputDialog.getText(
             self,
-            "New Playlist",
-            "Playlist name:",
+            self.tr("New Playlist"),
+            self.tr("Playlist name:"),
         )
         if not accepted:
             return
@@ -1446,15 +1470,15 @@ class YRadioWindow(QMainWindow):
         if path.exists():
             QMessageBox.warning(
                 self,
-                "Playlist",
-                "A playlist with that name already exists.",
+                self.tr("Playlist"),
+                self.tr("A playlist with that name already exists."),
             )
             return
 
         try:
             path.touch()
         except OSError as exc:
-            QMessageBox.warning(self, "Error", str(exc))
+            QMessageBox.warning(self, self.tr("Error"), str(exc))
             return
 
         self.refresh_playlists(select=name)
@@ -1466,15 +1490,15 @@ class YRadioWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "YRadio",
-                "Select a station first.",
+                self.tr("Select a station first."),
             )
             return
 
         filename, _ = QFileDialog.getSaveFileName(
             self,
-            "Choose Playlist",
+            self.tr("Choose Playlist"),
             str(PLAYLIST_DIR / "playlist.Favorites"),
-            "YRadio playlists (playlist.*)",
+            self.tr("YRadio playlists (playlist.*)"),
         )
         if not filename:
             return
@@ -1510,8 +1534,8 @@ class YRadioWindow(QMainWindow):
         if value is None:
             QMessageBox.warning(
                 self,
-                "Volume",
-                "Neither pactl nor amixer was found.",
+                self.tr("Volume"),
+                self.tr("Neither pactl nor amixer was found."),
             )
             return
 
@@ -1552,15 +1576,15 @@ class YRadioWindow(QMainWindow):
             if not self.ripper.waitForFinished(1200):
                 self.ripper.kill()
 
-            self.rip_button.setText("Start Recording")
-            self.status.setText("Recording stopped")
+            self.rip_button.setText(self.tr("Start Recording"))
+            self.status.setText(self.tr("Recording stopped"))
             return
 
         if self.player_name != "mpv":
             QMessageBox.information(
                 self,
-                "Recording",
-                "mpv is required for recording.",
+                self.tr("Recording"),
+                self.tr("mpv is required for recording."),
             )
             return
 
@@ -1574,8 +1598,8 @@ class YRadioWindow(QMainWindow):
         if not url:
             QMessageBox.information(
                 self,
-                "Recording",
-                "Start a station before recording.",
+                self.tr("Recording"),
+                self.tr("Start a station before recording."),
             )
             return
 
@@ -1583,8 +1607,8 @@ class YRadioWindow(QMainWindow):
         if not lua_script.is_file():
             QMessageBox.warning(
                 self,
-                "Recording",
-                f"Script not found:\n{lua_script}",
+                self.tr("Recording"),
+                self.tr("Script not found:\n{0}").format(lua_script),
             )
             return
 
@@ -1599,7 +1623,7 @@ class YRadioWindow(QMainWindow):
         if not recording_dir:
             recording_dir = QFileDialog.getExistingDirectory(
                 self,
-                "Choose Recording Folder",
+                self.tr("Choose Recording Folder"),
                 str(HOME),
             )
             if not recording_dir:
@@ -1612,15 +1636,15 @@ class YRadioWindow(QMainWindow):
                     encoding="utf-8",
                 )
             except OSError as exc:
-                QMessageBox.warning(self, "Recording", str(exc))
+                QMessageBox.warning(self, self.tr("Recording"), str(exc))
                 return
 
         program = shutil.which("mpv")
         if not program:
             QMessageBox.warning(
                 self,
-                "Recording",
-                "mpv was not found.",
+                self.tr("Recording"),
+                self.tr("mpv was not found."),
             )
             return
 
@@ -1638,11 +1662,14 @@ class YRadioWindow(QMainWindow):
                 url,
             ],
         )
-        self.rip_button.setText("Stop Recording")
-        self.status.setText(f"Recording: {self.current_station}")
+
+        self.rip_button.setText(self.tr("Stop Recording"))
+        self.status.setText(
+            self.tr("Recording: {0}").format(self.current_station)
+        )
 
     def ripper_finished(self, _code, _status):
-        self.rip_button.setText("Start Recording")
+        self.rip_button.setText(self.tr("Start Recording"))
 
     def closeEvent(self, event):
         if self.ripper.state() != QProcess.ProcessState.NotRunning:
@@ -1660,11 +1687,30 @@ def main():
     app.setDesktopFileName("audio-radio")
     app.setWindowIcon(app_logo())
 
+    # Translations: Qt's own (standard buttons) and YRadio's, picked by system locale
+    qt_translator = QTranslator()
+    if qt_translator.load(
+        QLocale(),
+        "qtbase",
+        "_",
+        QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath),
+    ):
+        app.installTranslator(qt_translator)
+
+    app_translator = QTranslator()
+    if app_translator.load(
+        QLocale(),
+        "YRadio-Qt",
+        "_",
+        str(APP_DIR / "translations"),
+    ):
+        app.installTranslator(app_translator)
+
     if not shutil.which("mpv") and not shutil.which("mplayer"):
         QMessageBox.critical(
             None,
-            "Player Not Found",
-            "mpv or mplayer was not found. Install one of these players.",
+            QCoreApplication.translate("main", "Player Not Found"),
+            QCoreApplication.translate("main", "mpv or mplayer was not found. Install one of these players."),
         )
         return 1
 
