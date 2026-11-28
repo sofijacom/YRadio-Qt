@@ -34,7 +34,7 @@ sudo pacman -Syu mpv alsa-utils libpulse pipewire-pulse python pyside6
 - **Pause, volume and stop:** use the buttons in the program window or the corresponding menu items of the tray icon.
 - **Record:** start the station and press Start Recording. Required for registration mpv and file yradio_ripper.lua next to the program. When you first start recording, select a folder for the files.
 
-#### Setting up Qt6 applications using the ( Kvantum Manager ) and ( Qt6 Configuration Tool ) for Void Linux ( Xfce )
+### Setting up Qt6 applications using the ( Kvantum Manager ) and ( Qt6 Configuration Tool ) for Void Linux ( Xfce )
 
 _XFCE primarily configures GTK applications, while Plasma has native Qt integration and the Breeze theme. For Qt applications outside of Plasma, you need to select a style and palette separately._
 
