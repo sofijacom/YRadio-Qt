@@ -33,3 +33,19 @@ sudo pacman -Syu mpv alsa-utils libpulse pipewire-pulse python pyside6
 - **Select player:** right click on the YRadio icon in the system tray, open Select player (mpv or mplayer) and select the installed player. The selection is applied the next time the station is started.
 - **Pause, volume and stop:** use the buttons in the program window or the corresponding menu items of the tray icon.
 - **Record:** start the station and press Start Recording. Required for registration mpv and file yradio_ripper.lua next to the program. When you first start recording, select a folder for the files.
+
+### Setting up Qt6 applications using the ( Kvantum Manager ) and ( Qt6 Configuration Tool ) for Void Linux ( Xfce )
+
+```
+xbps install -Su kvantum qt6ct breeze-icons
+```
+
+- Run the Qt6 Configuration Tool
+
+- In QT6 Settings, select Appearance > Kvantum Style
+
+- In **/etc/environment** we add `QT_QPA_PLATFORMTHEME=qt6ct`
+
+- Log out and log back in
+
+- Check in the terminal: `echo $QT_QPA_PLATFORMTHEME` if Qt6 is connected, you will see the output **qt6ct**
