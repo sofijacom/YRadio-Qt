@@ -52,6 +52,7 @@ xbps install -Su kvantum qt6ct breeze-icons
 
 - **Check in the terminal:** `echo $QT_QPA_PLATFORMTHEME` if Qt6 is connected, you will see the output **qt6ct**
 
+<br>
 
 <img width="850" height="478" alt="snapedit_1795854253921" src="https://github.com/user-attachments/assets/d6c862e9-8269-4d34-b461-48b712dc5a89" />
 
