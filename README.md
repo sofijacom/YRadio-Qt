@@ -36,8 +36,6 @@ sudo pacman -Syu mpv alsa-utils libpulse pipewire-pulse python pyside6
 
 #### Setting up Qt6 applications using the ( Kvantum Manager ) and ( Qt6 Configuration Tool ) for Void Linux ( Xfce )
 
-_I remembered that for QT6 applications in Hyprland, I configure QT6 connection for applications with a "Qt6" interface. There, I use "kvantum"_
-
 _XFCE primarily configures GTK applications, while Plasma has native Qt integration and the Breeze theme. For Qt applications outside of Plasma, you need to select a style and palette separately._
 
 ```
