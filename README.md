@@ -39,7 +39,7 @@ sudo pacman -Syu mpv alsa-utils libpulse pipewire-pulse python pyside6
 _XFCE primarily configures GTK applications, while Plasma has native Qt integration and the Breeze theme. For Qt applications outside of Plasma, you need to select a style and palette separately._
 
 ```
-xbps install -Su kvantum qt6ct breeze-icons
+sudo xbps install -Su kvantum qt6ct breeze-icons
 ```
 
 - Run the Qt6 Configuration Tool
